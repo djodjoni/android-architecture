@@ -38,4 +38,10 @@ ext {
     runnerVersion = '0.5'
     rulesVersion = '0.5'
     espressoVersion = '2.2.2'
+
+    cucAndroid = '1.2.4'
+    cucPico = '1.2.4'
+    cucJvm = '1.0.3'
+    cucJava = '1.2.4'
+    cucJunit = '1.2.4'
 }

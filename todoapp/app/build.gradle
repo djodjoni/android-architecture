@@ -11,7 +11,8 @@ android {
         versionCode 1
         versionName "1.0"
 
-        testInstrumentationRunner 'android.support.test.runner.AndroidJUnitRunner'
+        //testInstrumentationRunner 'android.support.test.runner.AndroidJUnitRunner'
+        testInstrumentationRunner 'com.example.android.architecture.blueprints.todoapp.CucRunner'
     }
 
     buildTypes {
@@ -43,7 +44,7 @@ android {
 
     // Remove mockRelease as it's not needed.
     android.variantFilter { variant ->
-        if(variant.buildType.name.equals('release')
+        if (variant.buildType.name.equals('release')
                 && variant.getFlavors().get(0).name.equals('mock')) {
             variant.setIgnore(true);
         }
@@ -53,6 +54,20 @@ android {
     testOptions.unitTests.all {
         testLogging {
             events 'passed', 'skipped', 'failed', 'standardOut', 'standardError'
+        }
+    }
+
+    gradle.taskGraph.afterTask { task, TaskState state ->
+        if ((task == connectedAndroidTest) || (task == connectedCheck)) {
+            def reportDir = new File(project.buildDir, "cucumber-reports")
+            if (!reportDir.exists()) {
+                reportDir.mkdirs()
+            }
+            println 'Retrieving Cucumber test report to ' + project.buildDir
+            def processBuilder = new ProcessBuilder(
+                    ['adb', 'pull', '/data/data/com.example.android.architecture.blueprints' +
+                            '.todomvp.mock/cuc', reportDir.getAbsolutePath()])
+            processBuilder.start()
         }
     }
 }
@@ -76,8 +91,17 @@ dependencies {
     testCompile "org.mockito:mockito-all:$rootProject.ext.mockitoVersion"
     testCompile "org.hamcrest:hamcrest-all:$rootProject.ext.hamcrestVersion"
 
+    //JUnit Cucumber
+    testCompile "info.cukes:cucumber-java:$rootProject.ext.cucJava"
+    testCompile "info.cukes:cucumber-junit:$rootProject.ext.cucJunit"
+    testCompile "info.cukes:cucumber-picocontainer:$rootProject.ext.cucPico"
+
     // Android Testing Support Library's runner and rules
-    androidTestCompile "com.android.support.test:runner:$rootProject.ext.runnerVersion"
+    androidTestCompile("com.android.support.test:runner:$rootProject.ext.runnerVersion"){
+        exclude group: 'com.android.support', module: 'support-annotations'
+        exclude group: 'com.android.support', module: 'support-v4'
+        exclude group: 'com.android.support', module: 'recyclerview-v7'
+    }
     androidTestCompile "com.android.support.test:rules:$rootProject.ext.runnerVersion"
 
     // Dependencies for Android unit tests
@@ -87,12 +111,33 @@ dependencies {
     androidTestCompile 'com.google.dexmaker:dexmaker-mockito:1.2'
 
     // Espresso UI Testing
-    androidTestCompile "com.android.support.test.espresso:espresso-core:$rootProject.espressoVersion"
-    androidTestCompile ("com.android.support.test.espresso:espresso-contrib:$rootProject.espressoVersion")
+    androidTestCompile("com.android.support.test.espresso:espresso-core:$rootProject.espressoVersion") {
+        exclude group: 'com.android.support', module: 'support-annotations'
+        exclude group: 'com.android.support', module: 'support-v4'
+        exclude group: 'com.android.support', module: 'recyclerview-v7'
+    }
+    androidTestCompile("com.android.support.test.espresso:espresso-contrib:$rootProject.espressoVersion"){
+        exclude group: 'com.android.support', module: 'support-annotations'
+        exclude group: 'com.android.support', module: 'support-v4'
+        exclude group: 'com.android.support', module: 'recyclerview-v7'
+        exclude group: 'com.android.support', module: 'appcompat-v7'
+        exclude group: 'com.android.support', module: 'design'
+    }
     androidTestCompile "com.android.support.test.espresso:espresso-intents:$rootProject.espressoVersion"
 
     // Resolve conflicts between main and test APK:
     androidTestCompile "com.android.support:support-annotations:$rootProject.supportLibraryVersion"
     androidTestCompile "com.android.support:support-v4:$rootProject.supportLibraryVersion"
     androidTestCompile "com.android.support:recyclerview-v7:$rootProject.supportLibraryVersion"
+
+    //Android Cucumber
+    androidTestCompile("info.cukes:cucumber-android:$rootProject.ext.cucAndroid") {
+        exclude group: 'com.google.guava', module: 'guava'
+        exclude module: 'cucumber-jvm-deps'
+    }
+    androidTestCompile("info.cukes:cucumber-picocontainer:$rootProject.ext.cucPico") {
+        exclude module: 'cucumber-jvm-deps'
+    }
+    androidTestCompile "info.cukes:cucumber-jvm-deps:$rootProject.ext.cucJvm"
+
 }
